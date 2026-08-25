@@ -1,14 +1,14 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color('grey');
-
 const axesHelper = new THREE.AxesHelper( 5 );
 scene.add( axesHelper );
 
 const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.05, 1000 );
-camera.position.set(0.0,0,5);
+camera.position.set(0,0,5);
 
 
 const renderer = new THREE.WebGLRenderer();
@@ -17,6 +17,36 @@ document.body.appendChild( renderer.domElement );
 
 const controls = new OrbitControls( camera, renderer.domElement );
 controls.update();
+
+const light = new THREE.HemisphereLight(0xffffff, 0x444444, 3);
+scene.add(light);
+
+const dirLight = new THREE.DirectionalLight(0xffffff, 3);
+dirLight.position.set(5, 10, 5);
+scene.add(dirLight);
+
+
+const loader = new GLTFLoader();
+const gltf = loader.load(
+    'scifi_pistol.glb',
+    function (gltf) {
+	let model = gltf.scene;
+	model.scale.set(0.006,0.006,0.006);
+	console.log(camera.position);
+	model.position.set(camera.position.x+0.3,camera.position.y-0.23,camera.position.z-0.5);
+	    model.rotateY(Math.PI);
+	console.log(model.position);
+        scene.add(model);
+	console.log(gltf.scene);
+	    gltf.scene.castShadow = true;
+    },
+    function (xhr) {
+        console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+    },
+    function (error) {
+        console.error('An error happened', error);
+    }
+);
 
 //black wall
 const backWallGeometry = new THREE.BoxGeometry( 5,1,.05);
