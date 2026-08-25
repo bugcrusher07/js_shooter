@@ -25,20 +25,23 @@ const dirLight = new THREE.DirectionalLight(0xffffff, 3);
 dirLight.position.set(5, 10, 5);
 scene.add(dirLight);
 
-
+let fire = null;
+let mixer = null;
 const loader = new GLTFLoader();
-const gltf = loader.load(
+async function loadGLTF(){
+const gltf = await loader.load(
     'scifi_pistol.glb',
     function (gltf) {
 	let model = gltf.scene;
 	model.scale.set(0.006,0.006,0.006);
-	console.log(camera.position);
 	model.position.set(camera.position.x+0.3,camera.position.y-0.23,camera.position.z-0.5);
-	    model.rotateY(Math.PI);
-	console.log(model.position);
+	model.rotateY(Math.PI);
         scene.add(model);
-	console.log(gltf.scene);
-	    gltf.scene.castShadow = true;
+	const animations = gltf.animations;
+	mixer = new THREE.AnimationMixer(model);
+	fire = mixer.clipAction(animations[0]);
+	fire.setLoop(THREE.LoopOnce);
+	fire.clampWhenFinished = true;
     },
     function (xhr) {
         console.log((xhr.loaded / xhr.total * 100) + '% loaded');
@@ -47,6 +50,8 @@ const gltf = loader.load(
         console.error('An error happened', error);
     }
 );
+}
+loadGLTF();
 
 //black wall
 const backWallGeometry = new THREE.BoxGeometry( 5,1,.05);
@@ -87,8 +92,23 @@ ground.rotateY(Math.PI/2);
 scene.add( ground);
 
 
+// input for shooting
+document.addEventListener('click',(e)=>{
+	fire.play();
+	fire.reset();
+})
 
+const timer= new THREE.Timer();
 function animate( time ) {
+
+	if ( mixer ){
+		timer.update();
+	mixer.update(timer.getDelta());
+	}
+
   renderer.render( scene, camera );
 }
 renderer.setAnimationLoop( animate );
+
+
+
