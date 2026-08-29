@@ -27,19 +27,34 @@ scene.add(dirLight);
 
 let fire = null;
 let mixer = null;
+let reload = null
+
 const loader = new GLTFLoader();
+
 async function loadGLTF(){
+
 const gltf = await loader.load(
     'scifi_pistol.glb',
+
     function (gltf) {
+
 	let model = gltf.scene;
 	model.scale.set(0.006,0.006,0.006);
 	model.position.set(camera.position.x+0.3,camera.position.y-0.23,camera.position.z-0.5);
 	model.rotateY(Math.PI);
+
         scene.add(model);
+
 	const animations = gltf.animations;
 	mixer = new THREE.AnimationMixer(model);
+	//const animationAction = new THREE.AnimationAction(mixer,animations[0],
 	fire = mixer.clipAction(animations[0]);
+
+	reload = mixer.clipAction(THREE.AnimationUtils.subclip(animations[0],'reload',19,50,30));
+
+	reload.setLoop(THREE.LoopOnce);
+
+	fire._clip.duration = 0.55
 	fire.setLoop(THREE.LoopOnce);
 	fire.clampWhenFinished = true;
     },
@@ -91,19 +106,51 @@ ground.position.set(0,-0.5,2.5);
 ground.rotateY(Math.PI/2);
 scene.add( ground);
 
+let fireCooldown = 1;
+let reloadCooldown = 1;
+let fireActive = false;
+let reloadActive = false;
 
 // input for shooting
 document.addEventListener('click',(e)=>{
+	if ( fireActive  === false ){
 	fire.play();
-	fire.reset();
+	fire.reset(); 
+	fireActive = true;
+	}
 })
+
+//input for reload 
+document.addEventListener('keydown',(e)=>{
+	if ( e.code === 'KeyR'){
+		if ( reloadActive=== false){
+		console.log(reload);
+		reload.play();
+		reload.reset();
+		reloadActive = true;
+		}
+	}
+})
+
 
 const timer= new THREE.Timer();
 function animate( time ) {
+	if ( fireActive === true){
+		fireCooldown-= timer.getDelta()*3;
+	}
+	if ( fireCooldown< 0) 
+	{ fireActive = false; fireCooldown = 1;}
+
+	if ( reloadActive === true){
+		reloadCooldown-= timer.getDelta();
+	}
+	if ( reloadCooldown< 0) 
+	{ reloadActive = false; reloadCooldown= 1;}
+
 
 	if ( mixer ){
 		timer.update();
-	mixer.update(timer.getDelta());
+		mixer.update(timer.getDelta());
 	}
 
   renderer.render( scene, camera );
