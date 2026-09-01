@@ -31,8 +31,8 @@ let reload = null
 
 const loader = new GLTFLoader();
 
-async function loadGLTF(){
-
+async function loadGun()
+{
 const gltf = await loader.load(
     'scifi_pistol.glb',
 
@@ -40,7 +40,7 @@ const gltf = await loader.load(
 
 	let model = gltf.scene;
 	model.scale.set(0.006,0.006,0.006);
-	model.position.set(camera.position.x+0.3,camera.position.y-0.23,camera.position.z-0.5);
+	model.position.set(camera.position.x+0.2,camera.position.y-0.23,camera.position.z-0.5);
 	model.rotateY(Math.PI);
 
         scene.add(model);
@@ -66,7 +66,59 @@ const gltf = await loader.load(
     }
 );
 }
-loadGLTF();
+
+async function loadZombie(position,scale)
+{
+const gltf = await loader.load(
+    'zombie.glb',
+
+    function (gltf) {
+	let model = gltf.scene;
+	if ( position && scale ){
+		model.position.set(position);
+		model.scale.set(scale);
+	}
+	model.position.set(camera.position.x+4,camera.position.y-0.23,camera.position.z-0.5);
+	model.rotateY(Math.PI);
+	console.log(model);
+        scene.add(model);
+    },
+    function (xhr) {
+        console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+    },
+    function (error) {
+        console.error('An error happened', error);
+    }
+);
+}
+
+async function loadSmiley()
+{
+const gltf = await loader.load(
+    'smiley.glb',
+    function (gltf) {
+	let model = gltf.scene;
+	console.log('smiley loaded');
+	model.scale.set(0.006,0.006,0.006);
+	model.position.set(camera.position.x+0.3,camera.position.y-0.23,camera.position.z-0.5);
+	model.rotateY(Math.PI);
+
+	console.log('smiley model',model.animations);
+        scene.add(model);
+    },
+    function (xhr) {
+        console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+    },
+    function (error) {
+        console.error('An error happened', error);
+    }
+);
+}
+
+
+loadSmiley();
+loadGun();
+loadZombie();
 
 //black wall
 const backWallGeometry = new THREE.BoxGeometry( 5,1,.05);
@@ -106,6 +158,60 @@ ground.position.set(0,-0.5,2.5);
 ground.rotateY(Math.PI/2);
 scene.add( ground);
 
+//separating beams
+const leftBeamGeometry = new THREE.BoxGeometry( 4.5,.3,0.01);
+const leftBeamMaterial = new THREE.MeshBasicMaterial( { color: 0x000000} );
+const leftBeam= new THREE.Mesh( leftBeamGeometry, leftBeamMaterial );
+leftBeam.position.set(1,-.3,1.9);
+leftBeam.rotateY(Math.PI/2);
+scene.add( leftBeam);
+
+const rightBeamGeometry = new THREE.BoxGeometry( 4.5,.3,0.01);
+const rightBeamMaterial = new THREE.MeshBasicMaterial( { color: 0x000000} );
+const rightBeam= new THREE.Mesh( rightBeamGeometry, rightBeamMaterial );
+rightBeam.position.set(-1,-.3,1.9);
+rightBeam.rotateY(Math.PI/2);
+scene.add( rightBeam);
+
+//crosshair
+const planeGeometry = new THREE.BoxGeometry( .1,.01,.01 );
+const planeMaterial = new THREE.MeshBasicMaterial( { color: 0xffff00 } );
+const plane = new THREE.Mesh( planeGeometry, planeMaterial );
+plane.position.set(0,0,2);
+plane.setRotationFromEuler(camera.rotation);
+scene.add( plane );
+
+const crossGeometry = new THREE.BoxGeometry( 0.1,.01,.01 );
+const crossMaterial = new THREE.MeshBasicMaterial( { color: 0xffff00} );
+const cross = new THREE.Mesh( crossGeometry, crossMaterial );
+cross.position.set(0,0,2);
+cross.setRotationFromEuler(camera.rotation);
+cross.rotateZ(Math.PI/2);
+scene.add(cross);
+
+
+// player controller fps
+
+//left right movement
+document.addEventListener('keydown',(e)=>{
+	if ( e.code === 'KeyA'){
+		camera.position.set(camera.position.x -0.08,camera.position.y,camera.position.z);
+	}
+	if ( e.code === 'KeyD'){
+		console.log('1st pos - ',camera.position)
+		camera.position.set(camera.position.x + 0.08,camera.position.y,camera.position.z);
+		console.log('2nd pos - ',camera.position)
+	}
+})
+
+//mousemove input
+let mousePos = [0,0];
+document.addEventListener('mousemove',(e)=>{
+	mousePos = [e.x,e.y];
+})
+
+
+//input delay
 let fireCooldown = 1;
 let reloadCooldown = 1;
 let fireActive = false;
@@ -119,7 +225,6 @@ document.addEventListener('click',(e)=>{
 	fireActive = true;
 	}
 })
-
 //input for reload 
 document.addEventListener('keydown',(e)=>{
 	if ( e.code === 'KeyR'){
@@ -135,6 +240,7 @@ document.addEventListener('keydown',(e)=>{
 
 const timer= new THREE.Timer();
 function animate( time ) {
+	camera.lookAt(cross.position)
 	if ( fireActive === true){
 		fireCooldown-= timer.getDelta()*3;
 	}
