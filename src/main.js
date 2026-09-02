@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color('grey');
@@ -15,8 +16,8 @@ const renderer = new THREE.WebGLRenderer();
 renderer.setSize( window.innerWidth, window.innerHeight );
 document.body.appendChild( renderer.domElement );
 
-const controls = new OrbitControls( camera, renderer.domElement );
-controls.update();
+//const controls = new OrbitControls( camera, renderer.domElement );
+//controls.update();
 
 const light = new THREE.HemisphereLight(0xffffff, 0x444444, 3);
 scene.add(light);
@@ -116,9 +117,9 @@ const gltf = await loader.load(
 }
 
 
-loadSmiley();
+//loadSmiley();
 loadGun();
-loadZombie();
+//loadZombie();
 
 //black wall
 const backWallGeometry = new THREE.BoxGeometry( 5,1,.05);
@@ -190,25 +191,37 @@ cross.rotateZ(Math.PI/2);
 scene.add(cross);
 
 
+//clamp function
+function clamp(val,min,max){
+	return Math.min(Math.max(min,val),max);
+}
+
 // player controller fps
 
 //left right movement
 document.addEventListener('keydown',(e)=>{
 	if ( e.code === 'KeyA'){
-		camera.position.set(camera.position.x -0.08,camera.position.y,camera.position.z);
+		camera.position.set( clamp((camera.position.x -0.1),-2.3,2.3),camera.position.y,camera.position.z);
 	}
 	if ( e.code === 'KeyD'){
-		console.log('1st pos - ',camera.position)
-		camera.position.set(camera.position.x + 0.08,camera.position.y,camera.position.z);
-		console.log('2nd pos - ',camera.position)
+		camera.position.set( clamp((camera.position.x +0.1),-2.3,2.3),camera.position.y,camera.position.z);
 	}
 })
 
+/*
+let mouseRotationMovement= null;
+if ( window.innerWidth){
+mouseRotationMovement= window.innerWidth / 180;
+}
+*/
 //mousemove input
-let mousePos = [0,0];
-document.addEventListener('mousemove',(e)=>{
-	mousePos = [e.x,e.y];
-})
+
+
+// Initialize controls
+const controls = new PointerLockControls(camera, document.body);
+controls.maxPolarAngle = Math.PI;
+controls.minPolarAngle = -Math.PI;
+console.log(controls.minPolarAngle);
 
 
 //input delay
@@ -235,12 +248,17 @@ document.addEventListener('keydown',(e)=>{
 		reloadActive = true;
 		}
 	}
+	if ( e.code === 'KeyY'){
+		controls.lock(true);
+	}
 })
 
-
 const timer= new THREE.Timer();
-function animate( time ) {
-	camera.lookAt(cross.position)
+function animate( time ) { 
+
+	camera.rotation.x = THREE.MathUtils.clamp(camera.rotation.x,THREE.MathUtils.degToRad(-20), THREE.MathUtils.degToRad(20))
+	camera.rotation.z = THREE.MathUtils.degToRad(0);
+
 	if ( fireActive === true){
 		fireCooldown-= timer.getDelta()*3;
 	}
