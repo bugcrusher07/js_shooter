@@ -16,8 +16,8 @@ const renderer = new THREE.WebGLRenderer();
 renderer.setSize( window.innerWidth, window.innerHeight );
 document.body.appendChild( renderer.domElement );
 
-//const controls = new OrbitControls( camera, renderer.domElement );
-//controls.update();
+//const orbitalControls = new OrbitControls( camera, renderer.domElement );
+//orbitalControls.update();
 
 const light = new THREE.HemisphereLight(0xffffff, 0x444444, 3);
 scene.add(light);
@@ -31,6 +31,7 @@ let mixer = null;
 let reload = null
 
 const loader = new GLTFLoader();
+let gun = undefined;
 
 async function loadGun()
 {
@@ -40,10 +41,11 @@ const gltf = await loader.load(
     function (gltf) {
 
 	let model = gltf.scene;
+	gun = model;
 	model.scale.set(0.006,0.006,0.006);
 	model.position.set(camera.position.x+0.2,camera.position.y-0.23,camera.position.z-0.5);
-	model.rotateY(Math.PI);
-
+	//model.rotateY(Math.PI);
+	model.rotation.set(camera.rotation.x,-Math.PI,camera.rotation.z)
         scene.add(model);
 
 	const animations = gltf.animations;
@@ -58,6 +60,8 @@ const gltf = await loader.load(
 	fire._clip.duration = 0.55
 	fire.setLoop(THREE.LoopOnce);
 	fire.clampWhenFinished = true;
+	console.log(model.rotation);
+	console.log(camera.rotation);
     },
     function (xhr) {
         console.log((xhr.loaded / xhr.total * 100) + '% loaded');
@@ -175,7 +179,7 @@ rightBeam.rotateY(Math.PI/2);
 scene.add( rightBeam);
 
 //crosshair
-const planeGeometry = new THREE.BoxGeometry( .1,.01,.01 );
+const planeGeometry = new THREE.BoxGeometry( .01,.1,.01 );
 const planeMaterial = new THREE.MeshBasicMaterial( { color: 0xffff00 } );
 const plane = new THREE.Mesh( planeGeometry, planeMaterial );
 plane.position.set(0,0,2);
@@ -202,9 +206,13 @@ function clamp(val,min,max){
 document.addEventListener('keydown',(e)=>{
 	if ( e.code === 'KeyA'){
 		camera.position.set( clamp((camera.position.x -0.1),-2.3,2.3),camera.position.y,camera.position.z);
+		//gun.position.set(camera.position.x+0.2,camera.position.y-0.23,camera.position.z-0.5);
+		gun.position.set(camera.position.x,camera.position.y-0.23,camera.position.z-0.5);
 	}
 	if ( e.code === 'KeyD'){
 		camera.position.set( clamp((camera.position.x +0.1),-2.3,2.3),camera.position.y,camera.position.z);
+		//gun.position.set(camera.position.x+0.2,camera.position.y-0.23,camera.position.z-0.5);
+		gun.position.set(camera.position.x,camera.position.y-0.23,camera.position.z-0.5);
 	}
 })
 
@@ -254,11 +262,19 @@ document.addEventListener('keydown',(e)=>{
 })
 
 const timer= new THREE.Timer();
-function animate( time ) { 
 
+
+
+function animate( time ) { 
+	
 	camera.rotation.x = THREE.MathUtils.clamp(camera.rotation.x,THREE.MathUtils.degToRad(-20), THREE.MathUtils.degToRad(20))
 	camera.rotation.z = THREE.MathUtils.degToRad(0);
-
+	cross.rotation.set( camera.rotation.x,camera.rotation.y,camera.rotation.z);
+	plane.rotation.set( camera.rotation.x,camera.rotation.y,camera.rotation.z);
+	if ( gun ){
+		gun.rotation.y = camera.rotation.y+Math.PI;
+		gun.rotation.x = camera.rotation.x;
+	}
 	if ( fireActive === true){
 		fireCooldown-= timer.getDelta()*3;
 	}
