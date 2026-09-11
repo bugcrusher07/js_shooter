@@ -179,19 +179,18 @@ rightBeam.rotateY(Math.PI/2);
 scene.add( rightBeam);
 
 //crosshair
-const planeGeometry = new THREE.BoxGeometry( .01,.1,.01 );
+const planeGeometry = new THREE.BoxGeometry( .0005,.005,.0005 );
 const planeMaterial = new THREE.MeshBasicMaterial( { color: 0xffff00 } );
 const plane = new THREE.Mesh( planeGeometry, planeMaterial );
 plane.position.set(0,0,2);
 plane.setRotationFromEuler(camera.rotation);
 scene.add( plane );
 
-const crossGeometry = new THREE.BoxGeometry( 0.1,.01,.01 );
+const crossGeometry = new THREE.BoxGeometry( 0.005,.0005,.0005 );
 const crossMaterial = new THREE.MeshBasicMaterial( { color: 0xffff00} );
 const cross = new THREE.Mesh( crossGeometry, crossMaterial );
 cross.position.set(0,0,2);
 cross.setRotationFromEuler(camera.rotation);
-cross.rotateZ(Math.PI/2);
 scene.add(cross);
 
 
@@ -205,14 +204,12 @@ function clamp(val,min,max){
 //left right movement
 document.addEventListener('keydown',(e)=>{
 	if ( e.code === 'KeyA'){
-		camera.position.set( clamp((camera.position.x -0.1),-2.3,2.3),camera.position.y,camera.position.z);
-		//gun.position.set(camera.position.x+0.2,camera.position.y-0.23,camera.position.z-0.5);
-		gun.position.set(camera.position.x,camera.position.y-0.23,camera.position.z-0.5);
+		camera.position.set( clamp((camera.position.x -0.1),-1.9,1.9),camera.position.y,camera.position.z);
+		gun.position.set(camera.position.x+0.2,camera.position.y-0.23,camera.position.z-0.5);
 	}
 	if ( e.code === 'KeyD'){
-		camera.position.set( clamp((camera.position.x +0.1),-2.3,2.3),camera.position.y,camera.position.z);
-		//gun.position.set(camera.position.x+0.2,camera.position.y-0.23,camera.position.z-0.5);
-		gun.position.set(camera.position.x,camera.position.y-0.23,camera.position.z-0.5);
+		camera.position.set( clamp((camera.position.x +0.1),-1.9,1.9),camera.position.y,camera.position.z);
+		gun.position.set(camera.position.x+0.2,camera.position.y-0.23,camera.position.z-0.5);
 	}
 })
 
@@ -230,6 +227,22 @@ const controls = new PointerLockControls(camera, document.body);
 controls.maxPolarAngle = Math.PI;
 controls.minPolarAngle = -Math.PI;
 console.log(controls.minPolarAngle);
+
+let crosshairVector  = new THREE.Vector3(); 
+
+controls.addEventListener('change', (e)=>{
+	let directionVector = new THREE.Vector3(0,0,-1);
+	let directionEuler =  new THREE.Euler(camera.rotation.x,camera.rotation.y,camera.rotation.z,'XYZ');
+	directionVector.applyEuler(directionEuler);
+	directionVector.normalize();
+	let originVector = new THREE.Vector3(camera.position.x,camera.position.y,camera.position.z);
+	let ray = new THREE.Ray(originVector, directionVector);
+	//let ray  = new THREE.Ray(new THREE.Vector3(camera.position.x,camera.position.y,camera.position.z), new THREE.Vector3(0,0,-1).applyEuler(new THREE.Euler(camera.rotation.x,camera.rotation.y,camera.rotation.z,'xyz'));
+	console.log(ray);
+	ray.at(.1,crosshairVector);
+	cross.position.set(crosshairVector.x, crosshairVector.y,crosshairVector.z);
+	plane.position.set(crosshairVector.x,  crosshairVector.y,crosshairVector.z);
+})
 
 
 //input delay
